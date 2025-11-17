@@ -49,6 +49,13 @@ env/
 data/*.db
 !data/.gitkeep
 
+# Test/Debug files
+test_*.py
+debug_*.py
+validate_*.py
+*_BACKUP.py
+test_results.json
+
 # OCR models cache
 .paddlex/
 ~/.paddlex/

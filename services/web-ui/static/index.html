@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Processing Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 30px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .tabs {
+            background: white;
+            padding: 0 40px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 16px 32px;
+            border: none;
+            background: none;
+            color: #64748b;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+            top: 2px;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .content {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            padding: 40px;
+            min-height: 70vh;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pipeline Tab Styles */
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .result h3 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .result-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .result-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-grid,
+        .party-grid,
+        .amount-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            padding: 18px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 1px solid #e2e8f0;
+        }
+
+        .result-label {
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .result-value {
+            color: #0f172a;
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .party-card {
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .party-card h4 {
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .party-card p {
+            margin-bottom: 6px;
+            color: #0f172a;
+            font-weight: 600;
+        }
+
+        .party-card span {
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .items-table th,
+        .items-table td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .items-table th {
+            background: #eef2ff;
+            color: #4c1d95;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .category-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: #e0e7ff;
+            color: #4338ca;
+            margin-left: 6px;
+        }
+
+        .warning-list {
+            list-style: none;
+            margin: 12px 0 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .warning-list li {
+            background: #fff7ed;
+            border: 1px solid #fdba74;
+            color: #c2410c;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .code-block {
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 13px;
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+
+        /* Chat Tab Styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #f8fafc;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            line-height: 1.6;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .suggested-questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .suggested-question {
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .suggested-question:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .typing-indicator {
+            display: none;
+            gap: 4px;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            width: fit-content;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>📄 Invoice Processing Platform</h1>
+            <p>Procesamiento inteligente de facturas con OCR, LLM y asistente conversacional</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('pipeline')">🔄 Procesar Facturas</button>
+            <button class="tab" onclick="switchTab('chat')">💬 Asistente</button>
+        </div>
+
+        <div class="content">
+            <!-- Pipeline Tab -->
+            <div id="pipeline-tab" class="tab-content active">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">Arrastra una factura aquí o haz clic para seleccionar</div>
+                    <div class="upload-subtext">Soporta PDF, JPG, PNG (máx 10MB)</div>
+                    <input type="file" id="fileInput" class="file-input" accept=".pdf,image/*">
+                </div>
+
+                <div id="processing" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Procesando factura...</p>
+                </div>
+
+                <div id="result" class="result" style="display: none;">
+                    <h3>✅ Factura Procesada</h3>
+                    <div class="result-grid" id="resultGrid"></div>
+                </div>
+
+                <div id="error" class="error" style="display: none;"></div>
+            </div>
+
+            <!-- Chat Tab -->
+            <div id="chat-tab" class="tab-content">
+                <div class="suggested-questions">
+                    <div class="suggested-question" onclick="askQuestion('¿Cuántas facturas hay en total?')">
+                        📊 ¿Cuántas facturas hay en total?
+                    </div>
+                    <div class="suggested-question" onclick="askQuestion('¿Cuál es el monto total de todas las facturas?')">
+                        💰 Monto total de facturas
+                    </div>
+                    <div class="suggested-question" onclick="askQuestion('¿Cuáles son los principales proveedores?')">
+                        🏢 Principales proveedores
+                    </div>
+                    <div class="suggested-question" onclick="askQuestion('Muéstrame las facturas más recientes')">
+                        📅 Facturas más recientes
+                    </div>
+                </div>
+
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message assistant">
+                            <div class="message-avatar">🤖</div>
+                            <div class="message-content">
+                                ¡Hola! Soy tu asistente para consultar facturas. ¿En qué puedo ayudarte?
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <textarea 
+                            id="chatInput" 
+                            class="chat-input" 
+                            placeholder="Escribe tu pregunta sobre las facturas..."
+                            rows="1"
+                            onkeydown="handleChatKeyDown(event)"
+                        ></textarea>
+                        <button id="sendButton" class="send-button" onclick="sendMessage()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Pipeline Tab Logic
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const processing = document.getElementById('processing');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) processFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) processFile(file);
+        });
+
+        async function processFile(file) {
+            // Hide previous results
+            result.style.display = 'none';
+            error.style.display = 'none';
+            processing.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/pipeline/extract', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type') || '';
+                let data = null;
+                let fallbackText = '';
+
+                if (contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    fallbackText = (await response.text()).slice(0, 400);
+                }
+
+                if (!response.ok) {
+                    let errorMsg = data?.detail || fallbackText || 'Error processing file';
+                    
+                    // Mensajes más amigables para errores comunes
+                    if (response.status === 500 && errorMsg.includes('Límite de peticiones')) {
+                        errorMsg = '⏱️ Límite de API alcanzado. Espera 1-2 minutos e intenta nuevamente.';
+                    } else if (response.status === 500 && errorMsg.includes('rate limit')) {
+                        errorMsg = '⏱️ Límite de API alcanzado. Espera 1-2 minutos e intenta nuevamente.';
+                    } else if (errorMsg.includes('LLM returned')) {
+                        errorMsg = '⚠️ El documento tiene muy poco texto legible. Intenta con una imagen más clara o un PDF con más contenido.';
+                    } else if (fallbackText.includes('Request Entity Too Large')) {
+                        errorMsg = '📄 El archivo supera el tamaño permitido. Intenta con un PDF/imagen más liviano o reduce su resolución.';
+                    }
+                    
+                    throw new Error(errorMsg);
+                }
+
+                if (!data) {
+                    throw new Error('El servidor no devolvió una respuesta JSON válida. Intenta nuevamente en unos segundos.');
+                }
+
+                displayResult(data);
+            } catch (err) {
+                console.error('Pipeline request failed', err);
+                error.textContent = err.message;
+                error.style.display = 'block';
+            } finally {
+                processing.style.display = 'none';
+            }
+        }
+
+        function displayResult(data) {
+            const grid = document.getElementById('resultGrid');
+            grid.innerHTML = '';
+
+            const invoice = data.invoice || {};
+            const items = Array.isArray(data.items) ? data.items : [];
+            const notes = data.notes || {};
+
+            // Summary Section
+            const summaryFields = [
+                { label: 'Proveedor', value: invoice.vendor_name },
+                { label: 'Número', value: invoice.invoice_number },
+                { label: 'Fecha', value: invoice.invoice_date },
+                { label: 'Moneda', value: invoice.currency_code || 'UNK' },
+                { label: 'Items', value: items.length },
+                { label: 'Confianza', value: formatConfidence(notes.confidence) },
+            ];
+            grid.appendChild(createStatSection('📋 Resumen', summaryFields));
+
+            // Parties
+            const partiesSection = document.createElement('div');
+            partiesSection.className = 'result-section';
+            partiesSection.innerHTML = `
+                <div class="section-title">👥 Participantes</div>
+                <div class="party-grid">
+                    ${createPartyCard('Proveedor', invoice.vendor_name, invoice.vendor_tax_id)}
+                    ${createPartyCard('Cliente', invoice.buyer_name, invoice.buyer_tax_id)}
+                </div>
+            `;
+            grid.appendChild(partiesSection);
+
+            // Amounts
+            const amountFields = [
+                { label: 'Subtotal', value: formatCurrency(invoice.subtotal_cents, invoice.currency_code) },
+                { label: 'Descuento', value: formatCurrency(invoice.discount_cents, invoice.currency_code) },
+                { label: 'Impuestos / Fees', value: formatCurrency(invoice.tax_cents, invoice.currency_code) },
+                { label: 'Total', value: formatCurrency(invoice.total_cents, invoice.currency_code) },
+            ];
+            grid.appendChild(createStatSection('💵 Totales', amountFields));
+
+            // Items table
+            if (items.length > 0) {
+                const itemsSection = document.createElement('div');
+                itemsSection.className = 'result-section';
+                itemsSection.innerHTML = `
+                    <div class="section-title">🧾 Items (${items.length})</div>
+                    <div class="table-wrapper">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Descripción</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Total Línea</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${items
+                                    .map(
+                                        (item) => `
+                                            <tr>
+                                                <td>${escapeHtml(item.idx ?? '-')}</td>
+                                                <td>
+                                                    ${escapeHtml(item.description) || 'Sin descripción'}
+                                                    ${
+                                                        item.category
+                                                            ? `<span class="category-tag">${escapeHtml(item.category)}</span>`
+                                                            : ''
+                                                    }
+                                                </td>
+                                                <td>${formatQuantity(item.qty)}</td>
+                                                <td>${formatCurrency(item.unit_price_cents, invoice.currency_code)}</td>
+                                                <td>${formatCurrency(item.line_total_cents, invoice.currency_code)}</td>
+                                            </tr>
+                                        `
+                                    )
+                                    .join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                grid.appendChild(itemsSection);
+            }
+
+            // Warnings & confidence
+            const warnings = Array.isArray(notes.warnings) ? notes.warnings : [];
+            const warningsSection = document.createElement('div');
+            warningsSection.className = 'result-section';
+            warningsSection.innerHTML = `
+                <div class="section-title">⚠️ Alertas y calidad de datos</div>
+                <div class="summary-grid">
+                    <div class="stat-card">
+                        <div class="result-label">Nivel de confianza</div>
+                        <div class="result-value">${formatConfidence(notes.confidence)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="result-label">Advertencias detectadas</div>
+                        <div class="result-value">${warnings.length}</div>
+                    </div>
+                </div>
+                <ul class="warning-list">
+                    ${
+                        warnings.length
+                            ? warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')
+                            : '<li>Sin advertencias detectadas.</li>'
+                    }
+                </ul>
+            `;
+            grid.appendChild(warningsSection);
+
+            // Raw JSON
+            const rawSection = document.createElement('div');
+            rawSection.className = 'result-section';
+            rawSection.innerHTML = `
+                <div class="section-title">📦 JSON completo</div>
+                <pre class="code-block">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+            `;
+            grid.appendChild(rawSection);
+
+            result.style.display = 'block';
+        }
+
+        function createStatSection(title, fields) {
+            const section = document.createElement('div');
+            section.className = 'result-section';
+            section.innerHTML = `
+                <div class="section-title">${escapeHtml(title)}</div>
+                <div class="summary-grid">
+                    ${fields
+                        .map(
+                            (field) => `
+                                <div class="stat-card">
+                                    <div class="result-label">${escapeHtml(field.label)}</div>
+                                    <div class="result-value">${escapeHtml(field.value ?? 'N/A')}</div>
+                                </div>
+                            `
+                        )
+                        .join('')}
+                </div>
+            `;
+            return section;
+        }
+
+        function formatCurrency(cents, currency) {
+            if (cents === null || cents === undefined || isNaN(Number(cents))) {
+                return 'N/A';
+            }
+            const amount = Number(cents) / 100;
+            return `${escapeHtml(currency || 'UNK')} ${amount.toLocaleString('es-ES', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+        }
+
+        function formatQuantity(value) {
+            if (value === null || value === undefined || isNaN(Number(value))) return '—';
+            const num = Number(value);
+            return num % 1 === 0 ? num.toString() : num.toFixed(2);
+        }
+
+        function formatConfidence(value) {
+            if (value === null || value === undefined || isNaN(Number(value))) return 'N/A';
+            return `${Math.round(Number(value) * 100)}%`;
+        }
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function createPartyCard(title, name, taxId) {
+            return `
+                <div class="party-card">
+                    <h4>${escapeHtml(title)}</h4>
+                    <p>${escapeHtml(name) || 'N/A'}</p>
+                    <span>Tax ID: ${escapeHtml(taxId) || '—'}</span>
+                </div>
+            `;
+        }
+
+        // Chat Tab Logic
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        function handleChatKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function askQuestion(question) {
+            chatInput.value = question;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage('user', message);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            // Show typing indicator
+            const typingIndicator = addTypingIndicator();
+
+            // Disable input
+            sendButton.disabled = true;
+            chatInput.disabled = true;
+
+            try {
+                const response = await fetch('/api/assistant/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: message })
+                });
+
+                const data = await response.json();
+                typingIndicator.remove();
+
+                if (data.success) {
+                    addMessage('assistant', data.answer);
+                } else {
+                    addMessage('assistant', 'Lo siento, hubo un error al procesar tu pregunta.');
+                }
+            } catch (error) {
+                typingIndicator.remove();
+                addMessage('assistant', 'Error de conexión. Verifica que el servicio esté funcionando.');
+            } finally {
+                sendButton.disabled = false;
+                chatInput.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        function addMessage(type, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'user' ? 'TU' : '🤖';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = '🤖';
+
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator active';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(typingDiv);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            return messageDiv;
+        }
+    </script>
+</body>
+</html>

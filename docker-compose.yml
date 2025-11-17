@@ -1,44 +1,19 @@
-version: "3.9"
-
 services:
-  # Unified API - Pipeline + Assistant in one service
-  api:
+  pipeline-api:
     build:
-      context: .
+      context: ./services/ocr-pipeline-python
       dockerfile: Dockerfile
-    container_name: invoice-platform
+    container_name: pipeline-api
     restart: unless-stopped
     ports:
-      - "${HOST_PORT:-7000}:8000"
+      - "${API_HOST_PORT:-7001}:8000"
     env_file:
       - ./configs/env/.env
     environment:
       # Database
       DB_URL: ${DB_URL:-sqlite:///data/app.db}
       DB_PATH: ${DB_PATH:-/app/data/app.db}
-      
-      # Pipeline settings
-      UPLOAD_DIR: ${UPLOAD_DIR:-data/uploads}
-      PROCESSED_DIR: ${PROCESSED_DIR:-data/processed}
-      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
-      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-1}
-      PDF_OCR_DPI: ${PDF_OCR_DPI:-300}
-      PDF_OCR_MAX_PAGES: ${PDF_OCR_MAX_PAGES:-5}
-      
-      # Rate Limits (solo aplican si usas un proveedor remoto como Groq)
-      RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-24}
-      RATE_LIMIT_RPD: ${RATE_LIMIT_RPD:-11500}
-      RATE_LIMIT_TPM: ${RATE_LIMIT_TPM:-4800}
-      RATE_LIMIT_TPD: ${RATE_LIMIT_TPD:-400000}
-      
-      # Assistant settings
-      MAX_HISTORY_MESSAGES: ${MAX_HISTORY_MESSAGES:-10}
-      SESSION_TIMEOUT_SECONDS: ${SESSION_TIMEOUT_SECONDS:-1800}
-      ENABLE_DEBUG_MODE: ${ENABLE_DEBUG_MODE:-false}
-      
-      # Server
-      PORT: 8000
-      
+
     volumes:
       - ./data:/app/data
       - ./datasets:/app/datasets:ro
@@ -49,3 +24,41 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  invoice-agent-api:
+    build:
+      context: ./services/invoice-agent-python
+      dockerfile: Dockerfile
+    container_name: invoice-agent-api
+    restart: unless-stopped
+    env_file:
+      - ./configs/env/.env
+    environment:
+      INVOICE_AGENT_API_PORT: 8100
+      INVOICE_AGENT_MCP_ENDPOINT: ${INVOICE_AGENT_MCP_ENDPOINT:-http://mcp-sqlite:3000}
+
+  mcp-sqlite:
+    build:
+      context: ./services/mcp-invoices-ts
+      dockerfile: Dockerfile
+    container_name: mcp-sqlite
+    restart: unless-stopped
+    env_file:
+      - ./configs/env/.env
+    environment:
+      APP_DB_PATH: /app/data/app.db
+      MCP_HTTP_PORT: 3000
+    volumes:
+      - ./data:/app/data:ro
+
+  web-ui:
+    build:
+      context: ./services/web-ui
+      dockerfile: Dockerfile
+    container_name: web-ui
+    restart: unless-stopped
+    depends_on:
+      - pipeline-api
+      - invoice-agent-api
+    ports:
+      - "${HOST_PORT:-7000}:80"

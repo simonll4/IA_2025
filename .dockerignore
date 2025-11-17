@@ -46,8 +46,9 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 
-# Scripts
+# Scripts (exclude all except entrypoint)
 *.sh
+!docker-entrypoint.sh
 
 # Temporary
 *.tmp
